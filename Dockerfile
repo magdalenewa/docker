@@ -1,5 +1,15 @@
-FROM mcr.microsoft.com/windows/servercore:1803-amd64
-WORKDIR "/Tosca/"
-COPY ["Tricentis Tosca 13.0.0.exe", "C:/Tosca"]
-RUN powershell.exe '.\Tricentis Tosca 13.0.0.exe /s INSTALLDIR=C:\Tosca MOBILE_TESTING=1 DIAGNOSTICS=1 ADDLOCAL DexAgent START_SERVICES=1 TOSCA_PROJECTS /qn'
-RUN dir
+FROM mcr.microsoft.com/windows/servercore:1803
+EXPOSE 443
+WORKDIR "C:/Tosca"
+COPY Tosca.exe "C:\Tosca"
+RUN Tosca.exe /s /qn -Wait
+COPY ["License.xml", "C:/ProgramData/TRICENTIS/Tosca Testsuite/7.0.0/License"]
+COPY ["Draeger_shared_repository/", "C:/TOSCA_PROJECTS/TOSCA_WORKSPACES/Draeger_shared_repository"]
+COPY ["ToscaCIRemoteExecutionService.exe.config", "C:/Program Files (x86)/TRICENTIS/Tosca Testsuite/ToscaCommander/ToscaCI"]
+WORKDIR "C:/Program Files (x86)/TRICENTIS/Tosca Testsuite/ToscaCommander/ToscaCI"
+COPY ["powershell.ps1", "C:/Program Files (x86)/TRICENTIS/Tosca Testsuite/ToscaCommander/ToscaCI"]
+RUN powershell .\powershell.ps1
+WORKDIR "C:/Program Files (x86)/TRICENTIS/Tosca Testsuite/Licensing"
+RUN .\ToscaLicenseConfiguration connect-cloud ...
+WORKDIR "C:/Program Files (x86)/TRICENTIS/Tosca Testsuite/ToscaCommander/ToscaCI/Client"
+RUN ["ToscaCIClient.exe", "-m", "distributed"]
